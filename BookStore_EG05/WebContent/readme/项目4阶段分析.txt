@@ -1,0 +1,235 @@
+项目第四阶段：
+	1、使用EL表达式替换项目中的jsp表达式
+		1.1 base页面中的base标签路径需要使用EL拼接
+		1.2 login.jsp页面中错误消息的显示
+		1.3 regist.jsp页面中错误消息的显示以及表单数据的回显
+	
+	
+	2、在项目中使用EL+JSTL在页面中遍历显示图书数据
+		2.1 完成管理员端的 图书的增删改查功能
+			表现层：用户交互的内容
+				book_manager.jsp 提供图书处理的页面给管理员查看
+				BookManagerServlet extends BaseServlet  用来处理管理员增删改查图书的操作
+					访问Servlet时必须携带type参数，值就是方法名，方法的结构必须和doGet一样
+					getAllBooks();
+					getBook();
+					updateBook();
+					deleteBook();
+					addBook();
+			业务层：处理图书的业务逻辑[连接表现层和DAO层的]
+				BookService  interface
+					List<Book> getAllBooks();
+					Book getBook(String bookId); 	根据图书id查询一本图书的业务方法
+					boolean updateBook(Book book); 修改后的图书信息、要修改图书的id
+					boolean deleteBook(String bookId); 根据指定id删除一本图书
+					boolean addBook(Book book); 添加图书
+				BookServiceImpl
+			DAO层：和数据库图书表交互
+				BookDao   interface
+					List<Book>getBooks();//查询所有的图书方法
+					Book getBookById(String bookId);//根据id查询指定图书数据
+					int updateBookById(Book book);//根据id更新图书信息
+					deleteBookById(String bookId);//删除id对应的图书数据
+					boolean saveBook(Book book);//保存图书
+			数据库表
+				bs_book
+					id
+					title
+					author
+					price
+					sales
+					stock
+					img_path
+			实体类：Book		
+		2.2 完成用户访问index页面的图书的显示 和按照价格查询指定数据的功能
+		
+	开发流程：
+		1、创建bs_book表	+ Book类
+			CREATE TABLE bs_book(
+			 id INTEGER(11) PRIMARY KEY AUTO_INCREMENT,
+			 title VARCHAR(100) NOT NULL,
+			 author VARCHAR(100) NOT NULL,
+			 price DOUBLE(11,2) ,
+			 sales INT(11),
+			 stock INT(11),
+			 img_path  VARCHAR(100)
+			);
+		2、完成BookDao
+			BookDao   interface
+				List<Book>getBooks();//查询所有的图书方法
+				Book getBookById(String bookId);//根据id查询指定图书数据
+				int updateBookById(Book book);//根据id更新图书信息
+				deleteBookById(String bookId);//删除id对应的图书数据
+				boolean saveBook(Book book);//保存图书
+			BookDaoImpl
+			TestBookDao:测试dao的增删改查方法
+		3、完成查询所有图书并显示的功能
+			manager.jsp页面中点击《图书管理》超链接时，请求提交给BookManagerServlet处理查询所有图书的请求
+			BookManagerServlet处理请求时的业务交给BookService处理
+			存到request域中共享
+			再转发到book_manager.jsp取出域中的数据使用JSTL+EL遍历显示
+			3.1 创建BookService接口+BookServiceImpl，提供处理查询所有图书的业务方法
+			3.2 创建BookManagerServlet处理管理员和图书相关的请求
+			3.3 在book_manager.jsp页面中遍历显示获取的图书集合数据
+				- 导入JSTLjar包
+				- 在页面中引入要使用的核心标签库
+			3.4 修改manager.jsp页面中的《图书管理》超链接，被点击时提交请求给BookManagerServlet
+				并且请求交给getAllBooks方法处理
+		4、完成管理员删除图书的功能
+			在book_manager.jsp页面点击删除超链接，请求提交给BookManagerServlet并需要提交删除图书的id，删除之后回到删除之前的页面
+			4.1 需要在BookService中添加处理删除业务方法
+			4.2 在BookManagerServlet中提供处理删除请求的方法[需要删除图书的id参数]
+			4.3 修改book_manager.jsp页面删除超链接，点击时请求提交给BookManagerServlet.deleteBook
+			4.4 点击删除超链接给用户提示
+			
+		5、完成管理员添加图书的功能
+			5.1 创建book_add.jsp页面+修改表单提交的地址为BookManagerServlet，并且数据提交给addBook方法处理
+				表单中的请求参数名必须和Book类的属性名一致
+			5.2 修改book_manager.jsp页面中的添加图书超链接，点击跳转到book_add.jsp页面
+			5.3 BookManagerServlet中创建addBook处理添加图书的请求
+				addBook中获取图书的参数太多，可以使用第三方工具BeanUtils解决
+				1- BeanUtils可以将map中的键值对中的值设置给一个javabean
+					[map中的item的键必须和javabean的属性名一致]	
+					问题：需要导入logging依赖包
+				2- post请求乱码需要解决
+					在BaseServlet的doGet方法第一行设置request.setCharacterEncoding("UTF-8");
+				3- 将beanUtils给对象设置属性值的代码提取到工具方法中	
+				4- 处理完成后重定向到BookManagerServlet的getAllBooks方法再转发到图书显示页面
+			5.4 在BookService中编写处理添加图书的业务方法	
+		6、管理员修改图书的功能
+			6.1 在book_manager.jsp页面中点击修改超链接应该将修改标签所在的图书数据(包括id)携带到book_edit.jsp页面显示	
+				方案1：将图书数据拼接在修改超链接后
+				方案2：修改超链接提交请求给BookManagerServlet并且提交要修改图书的id
+						BookManagerServlet根据id查询到要修改的图书对象然后存到域中，再转发到book_edit.jsp页面获取显示
+				1- 在BookManagerServlet中提供处理根据id查询图书对象的请求方法[getBook()]
+				2- 在BookService中提供查询图书的业务方法[Book getBook(String bookId)]
+				3- 在book_edit.jsp页面中获取修改的图书数据显示
+				4- 修改book_manager.jsp页面中的修改超链接
+			6.2 book_edit.jsp页面中用户修改了图书数据后点击提交请求交给BookManagerServlet处理[updateBook]
+				1- 在BookManagerServlet中提供修改图书数据的请求方法[updateBook]
+				2- 修改book_edit.jsp表单提交的地址为BookManagerServlet
+			6.3 BookService中提供根据id修改图书的业务方法
+				1- 在BookService中提供处理修改图书的业务方法[updateBook]
+			
+		7、分页
+			开发中不推荐使用不带条件的查询语句
+			一次性查询所有，mysql执行效率低，用户体验差	
+			使用分页可以解决
+			
+			技术基础： limit关键字   select * from bs_book limit index , size;
+				pageNumber   页码：  用户查询时传入的参数
+				index        每页数据在数据库中的查询的起始索引值： 根据页码和每页显示的记录条数计算得到 (pageNumber-1)*size
+				size		 每页显示数据的记录条数： 程序中设置的
+				分页的目的是每次查询时只查询一页需要显示的记录封装到集合中
+			
+			管理员选择查询分页数据时，请求可以提交给BookManagerServlet处理[需要提交pageNumber]
+				- BookManagerServlet：    获取请求参数
+									获取pageNumber参数
+									int size = 4;
+				- BookService:  创建page对象和业务处理
+							创建Page对象
+							将pageNumber和size设置给page对象
+							page.getIndex()可以计算得到index
+							
+							和数据库相关的操作需要调用DAO并传入封装了两个参数的page对象  完成数据的继续填充
+				- BookDao:  分页数据库相关的数据的查询
+							查询图书的总记录条数totalCount并设置给page对象
+							page.getTotalPage()可以计算得到totalPage
+							根据page对象的index和size属性可以在book表中查询分页需要显示的图书集合data并设置给page对象
+							返回给service再返回给Servlet
+			7.1  创建分页类
+			7.2 BookDao中提供查询分页数据的方法   Page<Book> findPage(Page<Book> page);// page参数：包含了index、pageNumber和size
+			7.3 BookService中提供查询分页数据的业务方法Page<Book>  getPage(String pageNumber, int size);
+			7.4 测试查询分页数据的业务方法
+			7.5 在BookManagerServlet中提供处理分页数据查询请求的方法
+			7.6 修改include文件夹中manager_header.jsp中的图书管理超链接地址访问getPage
+			7.7 在分页导航栏中完成分页页码的显示
+					问题： 上一页下一页 需要有范围限制
+						上一页不能<1 , 下一页不能大于totalPage
+						在page类中获取pageNumber时可以在get方法中约束pageNumber的范围
+					问题2： 当前页码的超链接可以高亮显示，并且不可以点击发送请求
+			7.8 分页导航栏中，点击查询按钮，可以获取管理员输入的页面并跳转到指定页面
+				跳转之前先验证用户输入的页码是否合法
+		8、分页的优化和提取
+			8.1 页码如果太多，导航栏显示不好看，模仿百度之类做法，一次最多显示5个页码
+			
+			[1] 2 3 4 5
+			1 [2] 3 4 5
+			1 2 [3] 4 5
+			2 3 [4] 5 6
+			3 4 [5] 6 7
+			4 5 [6] 7 8
+			4 5 6 [7] 8
+			4 5 6 7 [8]
+			
+			情况
+				1、总页码<=5
+					begin=1
+					end = totalPage
+				2、总页码>5
+					2.1 如果pageNumber<=3  ，begin=1 ， end=5
+					2.2 如果pageNumber>3 , begin=pageNumber-2 , end = pageNumber+2
+						2.2.1 end<= totalPage
+						2.2.2 如果end>totalPage
+							end = totalPage
+							begin = totalPage-4
+		
+			8.2 提取分页导航栏
+				8.2.1 在BookManagerServlet的getPage方法中动态的获取分页数据的url地址并和page对象绑定
+				8.2.2 在book_manager.jsp页面的分页导航栏中获取page对象的path属性动态拼接url地址
+				8.2.3 将分页导航栏的代码提取到nav.jsp存放到include文件夹内
+				8.2.4 在book_manager.jsp页面中引入分页导航页面
+						
+		9、优化
+			9.1 分页导航栏需要添加条件，有page数据时才能显示[动态计算begin的值需要使用page对象的属性]
+			9.2 book_manager页面只能显示page对象的数据[getAllBooks方法被替代了，以后不使用了]
+			9.3 修改成功之后，希望跳转回修改之前的页面
+				修改的流程： 在图书显示的页面点击修改超链接 请求提交给BookManagerServlet.getBook方法处理
+						getBook方法查询到要修改的图书后 转发到book_edit.jsp页面
+						book_edit.jsp页面用户修改了图书数据后再点击提交请求交给BookManagerServlet.updateBook方法处理
+						updateBook方法处理后希望跳转回修改之前的页面
+						问题：如何将修改之前的页面传递给updateBook方法
+							- 浏览器和服务器之前数据传递的方式
+								1. getBook方法中获取请求头referer地址 就是修改之前的页面
+								2. getBook方法中将获取到的页面地址存到request域中	
+								3. book_edit.jsp页面获取了地址数据后可以以参数的形式交给BookManagerServlet的updateBook	
+		10、	用户界面[index.jsp]的图书分页查询	
+			表示层： BookClientServlet.getPage
+			index.jsp页面显示分页数据
+			解决首页显示数据必须先访问Servlet的问题
+				将index.jsp页面中显示数据的功能提取到其他页面
+				用户访问index.jsp页面时直接将请求转发给BookClientServlet的getPage方法
+				getPage处理请求后在转发到提取的显示分页数据的页面即可
+		
+		11、完成用户端按价格查询分页数据的功能
+			表示层： BookClientServlet.getPageByPrice
+				- 页码：String pageNumber
+				- 每页的记录条数：int  size
+				- 分页导航栏需要的分页前段地址：String path
+				- 价格最小值：String minPrice
+				- 价格最大值：String maxPrice
+			业务层： Page<Book> BookService.getPageByPrice(String pageNumber , int size , String minPrice , String maxPrice);
+				- 创建Page对象
+				- 将参数进行类型转换再设置给page对象
+				- 调用Dao完成数据的继续封装
+			DAO层：
+				- Page<Book> findPageByPrice(Page<Book> page,double minPrice , double maxPrice);
+				- 查询价格区间内的记录总条数：int totalCount   SELECT COUNT(*) FROM bs_book WHERE price>=10 AND price<=20;
+				- 查询分页数据的集合：List<Book>data SELECT * FROM bs_book WHERE price>=10 AND price<=20 LIMIT 0 , 4; 
+		
+			list.jsp页面中给查询的按钮绑定单击事件，点击时按价格区间查询分页数据并显示
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+			
+				
+						
+				

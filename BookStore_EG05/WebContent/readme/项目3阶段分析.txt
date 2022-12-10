@@ -1,0 +1,58 @@
+在项目中使用JSP
+	1、将所有的页面修改为jsp页面
+		修改方式：
+			方式1： 创建一个同名的jsp文件，将html页面中的内容拷贝到jsp文件中
+			方式2：
+				1.1 先在html页面第一行添加page指令
+				1.2 修改html后缀名为jsp
+	2、将页面中共有部分提取成公共页面，在需要使用的页面中静态引入
+		需要提取的页面部分
+			2.1 用户访问页面的右上角的登录状态[index/cart/order/user]
+				在WEB-INF下创建include文件夹用来存放提取的页面[include指令由服务器解析可以引入WEB-INF下的资源]
+				user_header.jsp
+				- 在所有的用户访问的页面中通过include指令在需要使用头部文件的页面中引入
+				
+			2.2 管理员的页面右上角的超链接[manager]
+				manager_header.jsp
+				- 在管理员访问的manager文件夹下的所有页面中引入头部
+				
+			2.3 所有的页面css样式的引入、jquery文件的引入、base标签
+				base.jsp
+				- 在所有的页面引入
+			2.4 需要修改所有页面中的相对路径+文件后缀名
+				Servlet中的路径的文件后缀也需要修改
+		项目拷贝后修改了项目名+上下文路径名之后，base标签的路径中的项目名也需要修改	
+			base标签中的路径可以动态拼接[request对象的方法]		
+				
+	3、用户登录或注册失败后转发到登录或注册页面，但是没有给用户错误提示
+		用户提交登录注册请求时，如果失败，可以向request域中设置失败消息，然后再到登录注册页面中取出变量值显示到页面中
+		3.1 LoginServlet中如果loginUser为null，在request域中设置errorMsg
+		3.2 在转发后的login.jsp页面中取出失败消息显示到页面中
+	4、注册失败时转发到注册页面，表单中的数据都没有了
+		用户在注册页面输入了注册信息提交[发起一次请求][请求给RegistServlet之后，如果注册失败转发到注册页面]
+		在转发后的页面中获取注册信息在表单中回显
+	5、Servlet功能过于单一，一个Servlet只能处理一个请求
+		模仿UserService优化Servlet，让一个Servlet可以同时支持多个请求
+		将一类请求交给一个Servlet处理：UserServlet处理和用户相关的请求[登录注册]
+		5.1 在login.jsp页面的收集登录信息的form表单中使用input隐藏域携带type=login的参数提交给UserServlet
+		5.2 创建Uservlet处理和用户相关的请求
+			在doGet方法中获取type参数值，根据值判断请求，调用对应的方法进行处理
+			login(request,response);//
+			[提交给UserServlet的请求必须携带type参数 ， 值服务器需要能识别]
+		
+		
+		-- 使用反射解决：
+			模拟HttpServlet的子类中调用doGet和doPost的方法
+				doGet和doPost是在HttpServlet中的sevice方法中控制调用的
+			创建BaseServlet管理项目所有的Servlet
+				- BaseServlet实现HttpServlet接口并实现doGet和doPost方法
+				- 在doGet中获取type参数值+获取子类的class类型+获取子类的type值对应的方法名
+				- 通过反射调用子类的方法
+			
+			- BaseServlet不是为了直接访问的，是为了管理子类Servlet方法调用的
+			- BaseServlet的doGet方法和doPost方法不能被子类覆盖[用户请求Servlet时，服务器调用其生命周期方法必须从BaseServlet中的doGet方法经过]
+			
+		
+		
+
+	

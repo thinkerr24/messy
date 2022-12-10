@@ -1,0 +1,80 @@
+完成项目的登录注册功能
+
+	1、业务流程
+		登录
+			login.html收集用户的登录信息
+			LoginServlet处理用户的登录请求
+					- 获取请求参数
+					- 调用其他类(DAO)处理业务[User UserDao.getUserByUsernameAndPassword(User user)]
+					- 根据处理结果给用户响应[如果返回值为null代表登录失败，如果不为null代表登录成功]
+						> 成功： 重定向到成功页面 login_success.html
+						> 失败： 转发到login.html页面让用户继续登录
+			UserDao 提供根据账号和密码查询用户数据的方法
+			BaseDao
+			JDBCUtils
+			创建数据库bookstore_0416+创建用户表bs_user+创建表的实体类User
+		注册
+			regist.html收集用户注册信息
+			RegistServlet处理用户注册的请求
+					- 获取注册信息并封装为User对象
+					- 调用UserDao处理请求[int UserDao.saveUser(User registUser);]
+					- 根据处理结果给用户响应[返回值>0代表注册成功 ， 返回值<=0代表注册失败]
+						> 成功：重定向到regist_success.html页面
+						> 失败： 转发到regist.html页面让用户继续注册
+						
+项目开发一般倒序开发	
+	开发流程：
+		1、创建数据库+表+实体类
+			CREATE TABLE bs_user(
+			 id INT(11) PRIMARY KEY AUTO_INCREMENT,
+			 username VARCHAR(100) NOT NULL UNIQUE,
+			 PASSWORD VARCHAR(100) NOT NULL , 
+			 email VARCHAR(100) UNIQUE 
+			);
+		2、动态项目连接数据库需要的相关jar包导入并配置c3p0的参数
+			mysql-connect.jarmysql驱动包
+			c3p0数据库连接池+ c3p0的配置文件
+			dbutils数据库操作的工具类： QueryRunner+ResultSetHandler
+		
+		3、BaseDao+JDBCUtils+UserDao： java代码中和数据库交互
+		
+			interface  UserDao: 用来操作User表的Dao
+				面向接口编程，由于UserDao中操作user表的需求经常变化，所以需要使用接口约束
+				User getUserByUsernameAndPassword(User user:包含用户登录的账号密码 );	根据账号密码查询用户，登录
+				int saveUser(User user： 包含用户注册的账号密码邮箱); 保存用户数据到数据库中， 注册
+			class UserDaoImpl extends BaseDao implement UserDao
+		4、创建LoginServlet处理用户的登录请求
+			4.1 修改login.html页面中表单提交地址为LoginServlet
+			4.2 开发LoginServlet处理登录请求
+				登录成功重定向到成功页面
+				登录失败转发到login.html页面
+					- 问题：转发造成相对路径的失效
+						使用base标签+相对路径的方式解决
+		5、完成注册功能RegistServlet
+			5.1修改regist.html页面表单提交地址为RegistServlet
+			5.2 创建RegistServlet处理注册请求
+	
+	项目使用三层架构优化
+		表现层：服务员    给用户显示页面、收集用户数据、和用户交互     不直接访问DAO层 ，将业务交给业务层，由业务层操作DAO
+			页面+Servlet
+		业务层：厨师   连接表现层和DAO层[不用写在servlet和dao中的所有的java代码都提取到业务层中]	
+			由于业务经常变化，也是面向接口编程
+			就是java类： UserService+UserServiceImpl
+		数据访问层：DAO 采购  直接和数据库交互的层
+		6、在项目中使用service层完成三层架构
+			servlet中的请求业务交给service处理，service层通过dao层和数据库进行交互
+项目缺陷： 用户在登录或注册页面登录注册失败时，转发回登录注册页面没有给用户错误提示，不够友好
+		可以通过Servlet向响应体写带错误提示的页面解决，但是过于麻烦
+		JSP:  服务器为了支持页面中使用变量和java代码推出的动态网页技术
+				java server page：支持写代码的html页面
+				只能在服务器运行后将结果交给浏览器
+		
+
+
+
+
+
+
+
+		
+	
